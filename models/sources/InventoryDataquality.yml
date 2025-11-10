@@ -1,7 +1,7 @@
 version: 2
 
 sources:
-  - name: inventory
+  - name: inventory_quality
     description: ""
     database: inventory
     schema: stg_inventory
