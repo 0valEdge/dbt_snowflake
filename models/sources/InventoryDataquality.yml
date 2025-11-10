@@ -1,0 +1,909 @@
+version: 2
+
+sources:
+  - name: inventory
+    description: ""
+    database: inventory
+    schema: stg_inventory
+    loader: ssis
+    meta:
+      owner: "ovaledgedb"
+      tags: ["PII"]
+
+    tables:
+      - name: account
+        description: "stores data related to account"
+        columns:
+          - name: accountdescription
+            description: "stores data related to accountdescription in snowflake table account"
+            tests:
+              - not_null
+          - name: accountkey
+            description: "stores data related to accountkey in snowflake table account"
+            tests:
+              - not_null
+              - unique
+          - name: accounttype
+            description: "stores data related to accounttype in snowflake table account"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['customer', 'vendor', 'employee', 'other']
+          - name: parentaccountkey
+            description: "stores data related to parentaccountkey in snowflake table account"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','account') }}"
+                  field: accountkey
+          - name: valuetype
+            description: "stores data related to valuetype in snowflake table account"
+            tests:
+              - accepted_values:
+                  values: ['debit', 'credit']
+
+      - name: address
+        description: "stores data related to address"
+        columns:
+          - name: addressid
+            description: "stores data related to addressid in snowflake table address"
+            tests:
+              - not_null
+              - unique
+          - name: addressline1
+            description: "stores data related to addressline1 in snowflake table address"
+            tests:
+              - not_null
+          - name: addressline2
+            description: "stores data related to addressline2 in snowflake table address"
+          - name: businessentityid
+            description: "stores data related to businessentityid in snowflake table address"
+          - name: city
+            description: "stores data related to city in snowflake table address"
+            tests:
+              - not_null
+          - name: postalcode
+            description: "stores data related to postalcode in snowflake table address"
+            tests:
+              - not_null
+          - name: stateprovinceid
+            description: "stores data related to stateprovinceid in snowflake table address"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','stateprovince') }}"
+                  field: stateprovinceid
+
+      - name: amazonsaleshistory
+        description: "stores data related to amazonsaleshistory"
+        columns:
+          - name: productnumber
+            description: "stores data related to productnumber in snowflake table amazonsaleshistory"
+            tests:
+              - not_null
+          - name: saledate
+            description: "stores data related to saledate in snowflake table amazonsaleshistory"
+            tests:
+              - not_null
+          - name: salesamount
+            description: "stores data related to salesamount in snowflake table amazonsaleshistory"
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "salesamount >= 0"
+
+      - name: billofmaterials
+        description: "stores data related to billofmaterials"
+        columns:
+          - name: billofmaterialsid
+            description: "stores data related to billofmaterialsid in snowflake table billofmaterials"
+            tests:
+              - not_null
+              - unique
+          - name: bomlevel
+            description: "stores data related to bomlevel in snowflake table billofmaterials"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "bomlevel >= 0"
+          - name: componentid
+            description: "stores data related to componentid in snowflake table billofmaterials"
+            tests:
+              - not_null
+          - name: enddate
+            description: "stores data related to enddate in snowflake table billofmaterials"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table billofmaterials"
+          - name: perassemblyqty
+            description: "stores data related to perassemblyqty in snowflake table billofmaterials"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "perassemblyqty >= 0"
+          - name: productassemblyid
+            description: "stores data related to productassemblyid in snowflake table billofmaterials"
+            tests:
+              - not_null
+          - name: startdate
+            description: "stores data related to startdate in snowflake table billofmaterials"
+          - name: unitmeasurecode
+            description: "stores data related to unitmeasurecode in snowflake table billofmaterials"
+
+      - name: customer
+        description: "stores data related to customer"
+        columns:
+          - name: customerid
+            description: "stores data related to customerid in snowflake table customer"
+            tests:
+              - not_null
+              - unique
+          - name: personid
+            description: "stores data related to personid in snowflake table customer"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','person') }}"
+                  field: businessentityid
+          - name: ssn
+            description: "stores data related to ssn in snowflake table customer"
+            tests:
+              - not_null
+              - unique
+          - name: storeid
+            description: "stores data related to storeid in snowflake table customer"
+          - name: territoryid
+            description: "stores data related to territoryid in snowflake table customer"
+
+      - name: department
+        description: "stores data related to department"
+        columns:
+          - name: departmentid
+            description: "stores data related to departmentid in snowflake table department"
+            tests:
+              - not_null
+              - unique
+          - name: groupname
+            description: "stores data related to groupname in snowflake table department"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table department"
+          - name: name
+            description: "stores data related to name in snowflake table department"
+            tests:
+              - not_null
+
+      - name: employee
+        description: "stores data related to employee"
+        columns:
+          - name: birthdate
+            description: "stores data related to birthdate in snowflake table employee"
+            tests:
+              - not_null
+          - name: businessentityid
+            description: "stores data related to businessentityid in snowflake table employee"
+            tests:
+              - not_null
+              - unique
+          - name: currentflag
+            description: "stores data related to currentflag in snowflake table employee"
+          - name: gender
+            description: "stores data related to gender in snowflake table employee"
+            tests:
+              - accepted_values:
+                  values: ['M', 'F', 'O']
+          - name: hiredate
+            description: "stores data related to hiredate in snowflake table employee"
+            tests:
+              - not_null
+          - name: jobtitle
+            description: "stores data related to jobtitle in snowflake table employee"
+          - name: maritalstatus
+            description: "stores data related to maritalstatus in snowflake table employee"
+            tests:
+              - accepted_values:
+                  values: ['single', 'married', 'divorced', 'widowed']
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table employee"
+          - name: nationalidnumber
+            description: "stores data related to nationalidnumber in snowflake table employee"
+            tests:
+              - not_null
+              - unique
+          - name: organizationlevel
+            description: "stores data related to organizationlevel in snowflake table employee"
+          - name: salariedflag
+            description: "stores data related to salariedflag in snowflake table employee"
+          - name: sickleavehours
+            description: "stores data related to sickleavehours in snowflake table employee"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "sickleavehours >= 0"
+          - name: vacationhours
+            description: "stores data related to vacationhours in snowflake table employee"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "vacationhours >= 0"
+
+      - name: employeedepartment
+        description: "stores data related to employeedepartment"
+        columns:
+          - name: businessentityid
+            description: "stores data related to businessentityid in snowflake table employeedepartment"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','employee') }}"
+                  field: businessentityid
+          - name: departmentid
+            description: "stores data related to departmentid in snowflake table employeedepartment"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','department') }}"
+                  field: departmentid
+          - name: enddate
+            description: "stores data related to enddate in snowflake table employeedepartment"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table employeedepartment"
+          - name: shiftid
+            description: "stores data related to shiftid in snowflake table employeedepartment"
+          - name: startdate
+            description: "stores data related to startdate in snowflake table employeedepartment"
+
+      - name: krogersaleshistory
+        description: "stores data related to krogersaleshistory"
+        columns:
+          - name: productnumber
+            description: "stores data related to productnumber in snowflake table krogersaleshistory"
+            tests:
+              - not_null
+          - name: saledate
+            description: "stores data related to saledate in snowflake table krogersaleshistory"
+            tests:
+              - not_null
+          - name: salesamount
+            description: "stores data related to salesamount in snowflake table krogersaleshistory"
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "salesamount >= 0"
+
+      - name: person
+        description: "stores data related to person"
+        columns:
+          - name: businessentityid
+            description: "stores data related to businessentityid in snowflake table person"
+            tests:
+              - not_null
+              - unique
+          - name: email
+            description: "stores data related to email in snowflake table person"
+          - name: firstname
+            description: "stores data related to firstname in snowflake table person"
+            tests:
+              - not_null
+          - name: lastname
+            description: "stores data related to lastname in snowflake table person"
+            tests:
+              - not_null
+          - name: middlename
+            description: "stores data related to middlename in snowflake table person"
+          - name: nationalidnumber/ssn
+            description: "stores data related to nationalidnumber/ssn in snowflake table person"
+            tests:
+              - not_null
+              - unique
+          - name: persontype
+            description: "stores data related to persontype in snowflake table person"
+          - name: title
+            description: "stores data related to title in snowflake table person"
+
+      - name: personphone
+        description: "stores data related to personphone"
+        columns:
+          - name: businessentityid
+            description: "stores data related to businessentityid in snowflake table personphone"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','person') }}"
+                  field: businessentityid
+          - name: phonenumber
+            description: "stores data related to phonenumber in snowflake table personphone"
+            tests:
+              - not_null
+
+      - name: plant
+        description: "stores data related to plant"
+        columns:
+          - name: city
+            description: "stores data related to city in snowflake table plant"
+            tests:
+              - not_null
+          - name: name
+            description: "stores data related to name in snowflake table plant"
+            tests:
+              - not_null
+          - name: plantid
+            description: "stores data related to plantid in snowflake table plant"
+            tests:
+              - not_null
+              - unique
+
+      - name: product
+        description: "stores data related to product"
+        columns:
+          - name: class
+            description: "stores data related to class in snowflake table product"
+          - name: color
+            description: "stores data related to color in snowflake table product"
+          - name: daystomanufacture
+            description: "stores data related to daystomanufacture in snowflake table product"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "daystomanufacture >= 0"
+          - name: discontinueddate
+            description: "stores data related to discontinueddate in snowflake table product"
+          - name: finishedgoodsflag
+            description: "stores data related to finishedgoodsflag in snowflake table product"
+          - name: formula
+            description: "stores data related to formula in snowflake table product"
+          - name: listprice
+            description: "stores data related to listprice in snowflake table product"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "listprice >= 0"
+          - name: makeflag
+            description: "stores data related to makeflag in snowflake table product"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table product"
+          - name: name
+            description: "stores data related to name in snowflake table product"
+            tests:
+              - not_null
+          - name: plantid
+            description: "stores data related to plantid in snowflake table product"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','plant') }}"
+                  field: plantid
+          - name: productid
+            description: "stores data related to productid in snowflake table product"
+            tests:
+              - not_null
+              - unique
+          - name: productline
+            description: "stores data related to productline in snowflake table product"
+          - name: productmodelid
+            description: "stores data related to productmodelid in snowflake table product"
+          - name: productnumber
+            description: "stores data related to productnumber in snowflake table product"
+            tests:
+              - not_null
+              - unique
+          - name: productsubcategoryid
+            description: "stores data related to productsubcategoryid in snowflake table product"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','productsubcategory') }}"
+                  field: productsubcategoryid
+          - name: reorderpoint
+            description: "stores data related to reorderpoint in snowflake table product"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "reorderpoint >= 0"
+          - name: safetystocklevel
+            description: "stores data related to safetystocklevel in snowflake table product"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "safetystocklevel >= 0"
+          - name: sellenddate
+            description: "stores data related to sellenddate in snowflake table product"
+          - name: sellstartdate
+            description: "stores data related to sellstartdate in snowflake table product"
+          - name: size
+            description: "stores data related to size in snowflake table product"
+          - name: sizeunitmeasurecode
+            description: "stores data related to sizeunitmeasurecode in snowflake table product"
+          - name: standardcost
+            description: "stores data related to standardcost in snowflake table product"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "standardcost >= 0"
+          - name: style
+            description: "stores data related to style in snowflake table product"
+          - name: warranty
+            description: "stores data related to warranty in snowflake table product"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "warranty >= 0"
+          - name: weight
+            description: "stores data related to weight in snowflake table product"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "weight >= 0"
+          - name: weightunitmeasurecode
+            description: "stores data related to weightunitmeasurecode in snowflake table product"
+
+      - name: productcategory
+        description: "stores data related to productcategory"
+        columns:
+          - name: name
+            description: "stores data related to name in snowflake table productcategory"
+            tests:
+              - not_null
+          - name: productcategoryid
+            description: "stores data related to productcategoryid in snowflake table productcategory"
+            tests:
+              - not_null
+              - unique
+
+      - name: productlistpricehistory
+        description: "stores data related to productlistpricehistory"
+        columns:
+          - name: enddate
+            description: "stores data related to enddate in snowflake table productlistpricehistory"
+          - name: listprice
+            description: "stores data related to listprice in snowflake table productlistpricehistory"
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "listprice >= 0"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table productlistpricehistory"
+          - name: productid
+            description: "stores data related to productid in snowflake table productlistpricehistory"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','product') }}"
+                  field: productid
+          - name: startdate
+            description: "stores data related to startdate in snowflake table productlistpricehistory"
+
+      - name: productsubcategory
+        description: "stores data related to productsubcategory"
+        columns:
+          - name: name
+            description: "stores data related to name in snowflake table productsubcategory"
+            tests:
+              - not_null
+          - name: productcategoryid
+            description: "stores data related to productcategoryid in snowflake table productsubcategory"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','productcategory') }}"
+                  field: productcategoryid
+          - name: productsubcategoryid
+            description: "stores data related to productsubcategoryid in snowflake table productsubcategory"
+            tests:
+              - not_null
+              - unique
+
+      - name: productvendor
+        description: "stores data related to productvendor"
+        columns:
+          - name: averageleadtime
+            description: "stores data related to averageleadtime in snowflake table productvendor"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "averageleadtime >= 0"
+          - name: businessentityid
+            description: "stores data related to businessentityid in snowflake table productvendor"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','vendor') }}"
+                  field: businessentityid
+          - name: lastreceiptcost
+            description: "stores data related to lastreceiptcost in snowflake table productvendor"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "lastreceiptcost >= 0"
+          - name: lastreceiptdate
+            description: "stores data related to lastreceiptdate in snowflake table productvendor"
+          - name: maxorderqty
+            description: "stores data related to maxorderqty in snowflake table productvendor"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "maxorderqty >= 0"
+          - name: minorderqty
+            description: "stores data related to minorderqty in snowflake table productvendor"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "minorderqty >= 0"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table productvendor"
+          - name: onorderqty
+            description: "stores data related to onorderqty in snowflake table productvendor"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "onorderqty >= 0"
+          - name: productid
+            description: "stores data related to productid in snowflake table productvendor"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','product') }}"
+                  field: productid
+          - name: standardprice
+            description: "stores data related to standardprice in snowflake table productvendor"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "standardprice >= 0"
+          - name: unitmeasurecode
+            description: "stores data related to unitmeasurecode in snowflake table productvendor"
+
+      - name: purchaseorderdetail
+        description: "stores data related to purchaseorderdetail"
+        columns:
+          - name: duedate
+            description: "stores data related to duedate in snowflake table purchaseorderdetail"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table purchaseorderdetail"
+          - name: orderqty
+            description: "stores data related to orderqty in snowflake table purchaseorderdetail"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "orderqty >= 0"
+          - name: productid
+            description: "stores data related to productid in snowflake table purchaseorderdetail"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','product') }}"
+                  field: productid
+          - name: purchaseorderdetailid
+            description: "stores data related to purchaseorderdetailid in snowflake table purchaseorderdetail"
+            tests:
+              - not_null
+              - unique
+          - name: purchaseorderid
+            description: "stores data related to purchaseorderid in snowflake table purchaseorderdetail"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','purchaseorderheader') }}"
+                  field: purchaseorderid
+          - name: receivedqty
+            description: "stores data related to receivedqty in snowflake table purchaseorderdetail"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "receivedqty >= 0"
+          - name: rejectedqty
+            description: "stores data related to rejectedqty in snowflake table purchaseorderdetail"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "rejectedqty >= 0"
+          - name: unitprice
+            description: "stores data related to unitprice in snowflake table purchaseorderdetail"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "unitprice >= 0"
+
+      - name: purchaseorderheader
+        description: "stores data related to purchaseorderheader"
+        columns:
+          - name: employeeid
+            description: "stores data related to employeeid in snowflake table purchaseorderheader"
+          - name: freight
+            description: "stores data related to freight in snowflake table purchaseorderheader"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table purchaseorderheader"
+          - name: orderdate
+            description: "stores data related to orderdate in snowflake table purchaseorderheader"
+            tests:
+              - not_null
+          - name: purchaseorderid
+            description: "stores data related to purchaseorderid in snowflake table purchaseorderheader"
+            tests:
+              - not_null
+              - unique
+          - name: revisionnumber
+            description: "stores data related to revisionnumber in snowflake table purchaseorderheader"
+          - name: shipdate
+            description: "stores data related to shipdate in snowflake table purchaseorderheader"
+          - name: shipmethodid
+            description: "stores data related to shipmethodid in snowflake table purchaseorderheader"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','shipmethod') }}"
+                  field: shipmethodid
+          - name: status
+            description: "stores data related to status in snowflake table purchaseorderheader"
+          - name: subtotal
+            description: "stores data related to subtotal in snowflake table purchaseorderheader"
+          - name: taxamt
+            description: "stores data related to taxamt in snowflake table purchaseorderheader"
+          - name: totaldue
+            description: "stores data related to totaldue in snowflake table purchaseorderheader"
+          - name: vendorid
+            description: "stores data related to vendorid in snowflake table purchaseorderheader"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','vendor') }}"
+                  field: businessentityid
+
+      - name: salesorderdetail
+        description: "stores data related to salesorderdetail"
+        columns:
+          - name: carriertrackingnumber
+            description: "stores data related to carriertrackingnumber in snowflake table salesorderdetail"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table salesorderdetail"
+          - name: orderqty
+            description: "stores data related to orderqty in snowflake table salesorderdetail"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "orderqty >= 0"
+          - name: productid
+            description: "stores data related to productid in snowflake table salesorderdetail"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','product') }}"
+                  field: productid
+          - name: salesorderdetailid
+            description: "stores data related to salesorderdetailid in snowflake table salesorderdetail"
+            tests:
+              - not_null
+              - unique
+          - name: salesorderid
+            description: "stores data related to salesorderid in snowflake table salesorderdetail"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','salesorderheader') }}"
+                  field: salesorderid
+          - name: specialofferid
+            description: "stores data related to specialofferid in snowflake table salesorderdetail"
+          - name: unitprice
+            description: "stores data related to unitprice in snowflake table salesorderdetail"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "unitprice >= 0"
+          - name: unitpricediscount
+            description: "stores data related to unitpricediscount in snowflake table salesorderdetail"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "unitpricediscount >= 0"
+
+      - name: salesorderheader
+        description: "stores data related to salesorderheader"
+        columns:
+          - name: accountnumber
+            description: "stores data related to accountnumber in snowflake table salesorderheader"
+          - name: billtoaddressid
+            description: "stores data related to billtoaddressid in snowflake table salesorderheader"
+          - name: comment
+            description: "stores data related to comment in snowflake table salesorderheader"
+          - name: creditcardapprovalcode
+            description: "stores data related to creditcardapprovalcode in snowflake table salesorderheader"
+          - name: creditcardid
+            description: "stores data related to creditcardid in snowflake table salesorderheader"
+          - name: currencyrateid
+            description: "stores data related to currencyrateid in snowflake table salesorderheader"
+          - name: customerid
+            description: "stores data related to customerid in snowflake table salesorderheader"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','customer') }}"
+                  field: customerid
+          - name: duedate
+            description: "stores data related to duedate in snowflake table salesorderheader"
+          - name: freight
+            description: "stores data related to freight in snowflake table salesorderheader"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table salesorderheader"
+          - name: onlineorderflag
+            description: "stores data related to onlineorderflag in snowflake table salesorderheader"
+          - name: orderdate
+            description: "stores data related to orderdate in snowflake table salesorderheader"
+            tests:
+              - not_null
+          - name: purchaseordernumber
+            description: "stores data related to purchaseordernumber in snowflake table salesorderheader"
+          - name: revisionnumber
+            description: "stores data related to revisionnumber in snowflake table salesorderheader"
+          - name: salesorderid
+            description: "stores data related to salesorderid in snowflake table salesorderheader"
+            tests:
+              - not_null
+              - unique
+          - name: salesordernumber
+            description: "stores data related to salesordernumber in snowflake table salesorderheader"
+          - name: salespersonid
+            description: "stores data related to salespersonid in snowflake table salesorderheader"
+          - name: shipdate
+            description: "stores data related to shipdate in snowflake table salesorderheader"
+          - name: shipmethodid
+            description: "stores data related to shipmethodid in snowflake table salesorderheader"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','shipmethod') }}"
+                  field: shipmethodid
+          - name: shiptoaddressid
+            description: "stores data related to shiptoaddressid in snowflake table salesorderheader"
+          - name: status
+            description: "stores data related to status in snowflake table salesorderheader"
+          - name: subtotal
+            description: "stores data related to subtotal in snowflake table salesorderheader"
+          - name: taxamt
+            description: "stores data related to taxamt in snowflake table salesorderheader"
+          - name: territoryid
+            description: "stores data related to territoryid in snowflake table salesorderheader"
+
+      - name: shipmethod
+        description: "stores data related to shipmethod"
+        columns:
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table shipmethod"
+          - name: name
+            description: "stores data related to name in snowflake table shipmethod"
+            tests:
+              - not_null
+          - name: shipbase
+            description: "stores data related to shipbase in snowflake table shipmethod"
+          - name: shipmethodid
+            description: "stores data related to shipmethodid in snowflake table shipmethod"
+            tests:
+              - not_null
+              - unique
+          - name: shiprate
+            description: "stores data related to shiprate in snowflake table shipmethod"
+
+      - name: stateprovince
+        description: "stores data related to stateprovince"
+        columns:
+          - name: countryregioncode
+            description: "stores data related to countryregioncode in snowflake table stateprovince"
+            tests:
+              - not_null
+          - name: name
+            description: "stores data related to name in snowflake table stateprovince"
+            tests:
+              - not_null
+          - name: stateprovincecode
+            description: "stores data related to stateprovincecode in snowflake table stateprovince"
+          - name: stateprovinceid
+            description: "stores data related to stateprovinceid in snowflake table stateprovince"
+            tests:
+              - not_null
+              - unique
+          - name: territoryid
+            description: "stores data related to territoryid in snowflake table stateprovince"
+
+      - name: storagelocation
+        description: "stores data related to storagelocation"
+        columns:
+          - name: availability
+            description: "stores data related to availability in snowflake table storagelocation"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "availability >= 0"
+          - name: bin
+            description: "stores data related to bin in snowflake table storagelocation"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "bin >= 0"
+          - name: costrate
+            description: "stores data related to costrate in snowflake table storagelocation"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "costrate >= 0"
+          - name: locationid
+            description: "stores data related to locationid in snowflake table storagelocation"
+            tests:
+              - not_null
+              - unique
+          - name: locationname
+            description: "stores data related to locationname in snowflake table storagelocation"
+            tests:
+              - not_null
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table storagelocation"
+          - name: productid
+            description: "stores data related to productid in snowflake table storagelocation"
+            tests:
+              - relationships:
+                  to: "{{ source('inventory','product') }}"
+                  field: productid
+          - name: quantity
+            description: "stores data related to quantity in snowflake table storagelocation"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "quantity >= 0"
+          - name: shelf
+            description: "stores data related to shelf in snowflake table storagelocation"
+
+      - name: transactionhistory
+        description: "stores data related to transactionhistory"
+        columns:
+          - name: actualcost
+            description: "stores data related to actualcost in snowflake table transactionhistory"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "actualcost >= 0"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table transactionhistory"
+          - name: productid
+            description: "stores data related to productid in snowflake table transactionhistory"
+            tests:
+              - not_null
+              - relationships:
+                  to: "{{ source('inventory','product') }}"
+                  field: productid
+          - name: quantity
+            description: "stores data related to quantity in snowflake table transactionhistory"
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "quantity >= 0"
+          - name: referenceorderid
+            description: "stores data related to referenceorderid in snowflake table transactionhistory"
+          - name: referenceorderlineid
+            description: "stores data related to referenceorderlineid in snowflake table transactionhistory"
+          - name: transactiondate
+            description: "stores data related to transactiondate in snowflake table transactionhistory"
+          - name: transactionid
+            description: "stores data related to transactionid in snowflake table transactionhistory"
+            tests:
+              - not_null
+              - unique
+          - name: transactiontype
+            description: "stores data related to transactiontype in snowflake table transactionhistory"
+
+      - name: targetsaleshistory
+        description: "stores data related to targetsaleshistory"
+        columns:
+          - name: productnumber
+            description: "stores data related to productnumber in snowflake table targetsaleshistory"
+            tests:
+              - not_null
+          - name: saledate
+            description: "stores data related to saledate in snowflake table targetsaleshistory"
+            tests:
+              - not_null
+          - name: salesamount
+            description: "stores data related to salesamount in snowflake table targetsaleshistory"
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "salesamount >= 0"
+
+      - name: vendor
+        description: "stores data related to vendor"
+        columns:
+          - name: accountnumber
+            description: "stores data related to accountnumber in snowflake table vendor"
+          - name: activeflag
+            description: "stores data related to activeflag in snowflake table vendor"
+          - name: businessentityid
+            description: "stores data related to businessentityid in snowflake table vendor"
+            tests:
+              - not_null
+              - unique
+          - name: creditrating
+            description: "stores data related to creditrating in snowflake table vendor"
+          - name: modifieddate
+            description: "stores data related to modifieddate in snowflake table vendor"
+          - name: name
+            description: "stores data related to name in snowflake table vendor"
+            tests:
+              - not_null
+          - name: preferredvendorstatus
+            description: "stores data related to preferredvendorstatus in snowflake table vendor"
+          - name: purchasingwebserviceurl
+            description: "stores data related to purchasingwebserviceurl in snowflake table vendor"
+
+      - name: walmartsaleshistory
+        description: "stores data related to walmartsaleshistory"
+        columns:
+          - name: productnumber
+            description: "stores data related to productnumber in snowflake table walmartsaleshistory"
+            tests:
+              - not_null
+          - name: saledate
+            description: "stores data related to saledate in snowflake table walmartsaleshistory"
+            tests:
+              - not_null
+          - name: salesamount
+            description: "stores data related to salesamount in snowflake table walmartsaleshistory"
+            tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: "salesamount >= 0"
