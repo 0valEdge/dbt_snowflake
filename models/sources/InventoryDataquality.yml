@@ -1,14 +1,14 @@
 version: 2
 
 sources:
-  - name: inventory_quality
+  - name: inventoryDQ
     description: ""
     database: inventory
     schema: stg_inventory
     loader: ssis
     meta:
       owner: "ovaledgedb"
-      tags: ["PII"]
+      tags: ["data_quality"]
 
     tables:
       - name: account
@@ -144,6 +144,7 @@ sources:
             tests:
               - not_null
               - unique
+              - ssn_format
           - name: storeid
             description: "stores data related to storeid in snowflake table customer"
           - name: territoryid
@@ -173,6 +174,7 @@ sources:
             description: "stores data related to birthdate in snowflake table employee"
             tests:
               - not_null
+              - dob_validity
           - name: businessentityid
             description: "stores data related to businessentityid in snowflake table employee"
             tests:
@@ -272,6 +274,9 @@ sources:
               - unique
           - name: email
             description: "stores data related to email in snowflake table person"
+            tests:
+              - email_domain_check
+              - email_format
           - name: firstname
             description: "stores data related to firstname in snowflake table person"
             tests:
@@ -287,6 +292,7 @@ sources:
             tests:
               - not_null
               - unique
+              - ssn_format
           - name: persontype
             description: "stores data related to persontype in snowflake table person"
           - name: title
@@ -306,6 +312,7 @@ sources:
             description: "stores data related to phonenumber in snowflake table personphone"
             tests:
               - not_null
+              - phone_number_format
 
       - name: plant
         description: "stores data related to plant"
@@ -355,6 +362,8 @@ sources:
             description: "stores data related to name in snowflake table product"
             tests:
               - not_null
+              - generic.generic_null_percent:
+                  max_null_percent: 5
           - name: plantid
             description: "stores data related to plantid in snowflake table product"
             tests:
@@ -631,6 +640,7 @@ sources:
             tests:
               - dbt_utils.expression_is_true:
                   expression: "orderqty >= 0"
+                  -orderqty_non_negative
           - name: productid
             description: "stores data related to productid in snowflake table salesorderdetail"
             tests:
@@ -864,6 +874,9 @@ sources:
               - not_null
               - dbt_utils.expression_is_true:
                   expression: "salesamount >= 0"
+              - generic.generic_threshold:
+                  min_value: 0
+                  max_value: 100000
 
       - name: vendor
         description: "stores data related to vendor"
